@@ -1,0 +1,86 @@
+# 議事録：Google Workspaceにおける簡易チケット管理・通知システムの構築
+
+**作成日:** 2026年2月18日
+**目的:** Backlogの代替となるタスク・申し送り事項の管理体制、およびチャットへの自動通知機能の要件定義と実装手順の記録
+
+---
+
+## 1. 意思決定プロセス（要件の絞り込み）
+
+### フェーズ1：管理ツールの選定
+* **検討内容:** Google Workspace上でチケット管理（タスク・申し送り事項）を行うための基盤ツール。
+* **決定事項:** **「Google スプレッドシート」** をベースとする。
+* **選定理由:** * Google ドキュメントではデータ構造（行・列）の概念がないため、プログラムでの検知や特定の項目の抽出が困難。
+  * スプレッドシートであれば、後続の通知自動化において「最新の行のデータを取得する」といった処理が確実かつ容易に実装できるため。
+
+### フェーズ2：通知手段の選定
+* **検討内容:** 新規タスク追加時に指定のチャット（Google Chat等）へ通知を飛ばす手段。
+* **決定事項:** **Google Apps Script（GAS）** を採用。
+* **選定理由:** * 外部のノーコードツール（Zapier等）は直感的に設定できるが、コストや利用制限の懸念がある。
+  * GASであれば、Google Workspaceの標準機能として無料で利用でき、要件に合わせた細やかなカスタマイズが可能なため。
+
+### フェーズ3：トリガーと動作要件の定義
+* **検討内容:** どのようなタイミングで、どのような情報を通知するか。
+* **決定事項:** 以下の仕様でシステムを構築する。
+  1. **トリガー:** スプレッドシートの「A1セル」に設置したボタンを、ユーザーが手動でクリックした時。
+  2. **対象データ:** シート内の**「一番最新の行（最終行）」**のみを対象とする。
+  3. **通知内容:** あらかじめ指定した列（例：タスク名、申し送り事項など）の内容と、同最終行の「A列のURL」。
+
+---
+
+## 2. 最終成果物（実装マニュアルとソースコード）
+
+上記の決定事項に基づき、以下の仕組みを構築する。
+
+### 【実装手順】
+1. **Webhookの取得:** Google Chatの通知先スペースから「Webhook URL」を発行しコピーする。
+2. **GASの設定:** スプレッドシートの「拡張機能」＞「Apps Script」を開き、後述のソースコードを貼り付けて保存する。コード内の `webhookUrl` に手順1のURLを設定する。
+3. **ボタンの設置:** スプレッドシートの「挿入」＞「図形描画」からボタンを作成し、A1セル付近に配置する。
+4. **スクリプトの割り当て:** 作成したボタンの「縦の︙メニュー」から「スクリプトを割り当て」を選択し、関数名 `sendLatestRowToChat` を設定する。
+
+### 【GAS ソースコード】
+```javascript
+function sendLatestRowToChat() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const lastRow = sheet.getLastRow();
+  
+  // データが1行目（見出しなど）しかない場合は終了
+  if (lastRow <= 1) {
+    SpreadsheetApp.getUi().alert("通知するデータがありません。");
+    return;
+  }
+  
+  // 取得する列の指定（1 = A列, 2 = B列, 3 = C列...）
+  const url = sheet.getRange(lastRow, 1).getValue();      // A列のURL
+  const taskName = sheet.getRange(lastRow, 2).getValue(); // B列のタスク名（例）
+  const note = sheet.getRange(lastRow, 3).getValue();     // C列の申し送り事項（例）
+  
+  // チャットに送るメッセージの作成
+  const message = `【新規タスクが追加されました】\n` +
+                  `タスク名: ${taskName}\n` +
+                  `申し送り事項: ${note}\n` +
+                  `チケットURL: ${url}`;
+                  
+  // Google Chat の Webhook URL を設定
+  const webhookUrl = "ここにコピーしたWebhook_URLを貼り付けてください";
+  
+  // 通知送信の設定
+  const options = {
+    "method": "post",
+    "headers": {
+      "Content-Type": "application/json; charset=UTF-8"
+    },
+    "payload": JSON.stringify({
+      "text": message
+    })
+  };
+  
+  // 送信実行
+  try {
+    UrlFetchApp.fetch(webhookUrl, options);
+    SpreadsheetApp.getUi().alert("最新の行のデータをチャットに通知しました！");
+  } catch (e) {
+    SpreadsheetApp.getUi().alert("通知に失敗しました: " + e.message);
+  }
+}
+```
