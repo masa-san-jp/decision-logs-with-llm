@@ -1,0 +1,89 @@
+# 議事録：社内限定 AI ナレッジアシスタント開発プロジェクト
+
+**日時:** 2026年2月18日
+**テーマ:** Google Workspace × Google Cloud (Vertex AI) を活用した社内検索・チャットボットの構想と設計
+**参加者:** ユーザー (開発者/Project Lead), AI (技術顧問/Architect)
+
+## 1. 検討の背景と目的
+* **発端:** Google Cloud の「Google カレンダー データストア」機能の有用性についての確認。
+* **目的:** 既存の Google Workspace 環境（Drive, Calendar, Chat, Mail）を横断し、社員一人ひとりの業務を支援する「社内版 AI アシスタント」の実現可能性とメリットを明確化する。
+
+## 2. 議論の要点と決定事項
+
+### 2.1. 導入のメリット (Why Now?)
+* **課題:** 社内情報はアプリごと（Drive, Calendar等）に分断されており、「探す時間」が無駄になっている。
+* **解決策:** 全データを横断検索できるシステムの構築。
+* **具体的メリット:**
+    * 「会議（いつ）」と「資料（なに）」を紐付けた文脈理解が可能になる。
+    * 個人のスケジュールを把握した上での業務サポート（「秘書」的機能）が実現する。
+
+### 2.2. システムのコンセプト定義
+* **ツール連携:** Google ドライブの検索窓を拡張するのではなく、**独立した「検索ポータル」や「チャットボット」**を構築する。
+* **UXイメージ:** 社員一人ひとりに専属の「スーパー秘書」がつく状態。
+* **権限管理 (Security):**
+    * **ID 認識型検索 (Identity-aware Search)** を採用。
+    * ログインしたユーザーの Google Workspace 権限（閲覧権限）をそのまま継承する。
+    * **決定事項:** 社外には一切データを出さない「社内ドメインに閉じた設計」とする。
+
+### 2.3. 技術スタックとアーキテクチャ
+* **基盤:** Google Cloud Platform + Google Workspace
+* **コアエンジン:** **Vertex AI Agent Builder (旧 Enterprise Search)**
+* **データソース:** Google Drive, Google Calendar (コネクタ接続)
+* **開発方針:** * 個人開発かつ初心者が行うため、フルスクラッチではなくマネージドサービスを活用する。
+    * Google Antigravity (AIパートナー) の支援を受けながら進める。
+
+## 3. 成果物 (Deliverables)
+
+### 3.1. システム基本設計書
+（議論の中で策定された「社内限定 AI ナレッジアシスタント 基本設計仕様書 v1.0」を参照）
+
+### 3.2. 開発着手のための AI 指示プロンプト
+開発を開始するため、AI パートナー（Google Antigravity）へ渡す指示書。
+
+---
+
+#### 【成果物】Google Antigravity への開発指示書 (プロンプト)
+
+以下のテキストをコピーし、AIチャットに入力して開発を開始する。
+
+```text
+# Role Definition
+あなたは、Google Cloud と Google Workspace 開発における世界最高峰の「シニア・ソリューションアーキテクト」であり、同時に初心者に優しく教える「メンター」です。
+
+# User Context (私について)
+* **スキルレベル:** 個人開発初心者。プログラミング経験は浅い。
+* **環境:** Google Workspace (管理者権限あり)、Google Cloud アカウントあり。
+* **目標:** 自分の組織（ドメイン）内のデータ（カレンダー、ドライブ等）を横断検索できる「社内用 AI チャットボット」を開発したい。
+
+# Project Goal (作りたいもの)
+Google Cloud の **"Vertex AI Agent Builder (Search & Conversation)"** をバックエンドに使用し、Google Workspace のデータを「データストア」として連携させた RAG (Retrieval-Augmented Generation) アプリケーション。
+社内の人間だけがアクセスでき、個人の権限（ACL）に基づいた回答が返ってくるセキュアな設計にする。
+
+# Tech Stack Constraints (技術制約)
+可能な限り「ノーコード / ローコード」または「マネージドサービス」を利用し、複雑なインフラ構築を避けること。
+1.  **Engine:** Vertex AI Agent Builder (旧 Enterprise Search)
+2.  **Data Source:** Google Workspace (Drive, Calendar)
+3.  **Frontend:** 初心者でも実装しやすい方法を提案してください（例: Streamlit on Cloud Run、あるいは Google Chat アプリとしての統合）。
+4.  **Auth:** Google アカウントによる認証（社内ドメイン限定）。
+
+# Instructions for AI (あなたへの依頼事項)
+私の「ペアプログラミング・パートナー」として、以下のプロセスをステップ・バイ・ステップで先導してください。一度に全てを説明せず、1つのフェーズが終わったら次へ進む形式にしてください。
+
+**Phase 1: Google Cloud プロジェクトのセットアップ**
+* 必要な API の有効化 (Vertex AI API, Discovery Engine API 等)
+* 課金設定の確認
+
+**Phase 2: Vertex AI Agent Builder の設定**
+* 「検索と会話」アプリの作成
+* Google Workspace データコネクタの設定（カレンダーとドライブの連携手順）
+* ※特に「Google Workspace のデータをどうやってインポートするか（OAuth設定や管理者コンソールでの設定）」をスクリーンショットが見えるかのように詳しく手順化してください。
+
+**Phase 3: フロントエンドの実装と接続**
+* 初心者が最も挫折しない方法での UI 実装コードの提示
+* ローカル環境でのテスト方法
+
+**Phase 4: デプロイとセキュリティ確認**
+* 自分だけ（または社内メンバーだけ）が使えるようにするためのアクセス制限設定
+
+---
+まずは **Phase 1** から、私が何をすべきか具体的なアクションアイテムを提示してください。
