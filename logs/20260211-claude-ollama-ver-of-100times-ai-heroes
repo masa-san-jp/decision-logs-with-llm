@@ -1,0 +1,250 @@
+# 100 TIMES AI HEROES - Ollama版開発に関する議事録
+
+**日時:** 2026年2月18日  
+**参加者:** プロジェクトオーナー、Claude（開発支援AI）  
+**議題:** OllamaベースのローカルLLM版の開発方針決定
+
+## 1. 背景・目的
+
+### プロジェクト概要
+
+- **リポジトリ:** https://github.com/masa-jp-art/100-times-ai-heroes
+- **現在の実装:** OpenAI API（GPT + DALL-E）を使用したマンガキャラクター自動生成システム
+- **受賞歴:** 第3回AIアートグランプリ審査委員特別賞受賞
+
+### 目的
+
+元のOpenAI版をベースに、Ollamaを使用したローカルLLM版のバリエーションを作成する
+
+## 2. 技術的な検討内容
+
+### 2.1 技術スタックの移行方針
+
+#### 現在の構成（OpenAI版）
+
+- テキスト生成: OpenAI GPT API
+- 画像生成: DALL-E API
+- その他: Few-shot learning、RAG
+
+#### 提案されたOllama版の構成
+
+- **テキスト生成:** Ollama (llama3.1, gemma2など)
+- **画像生成:** Stable Diffusion (ComfyUI/Automatic1111) または Flux
+- **ベクトル検索:** ChromaDB または FAISS (RAG用)
+- **画像理解:** LLaVA または BakLLaVA (i2t用)
+
+### 2.2 実装アーキテクチャ案
+
+```
+[Ollama Server]
+  ├── llama3.1:8b (メインLLM)
+  ├── llava (画像理解)
+  └── mistral (補助用)
+
+[画像生成]
+  └── SDXL + ComfyUI (ワークフロー管理)
+
+[ベクトルDB]
+  └── ChromaDB (Seeds/Wants/Role情報の保存)
+```
+
+### 2.3 段階的実装ステップ（提案）
+
+1. **環境構築** (1-2日)
+- Ollamaインストール
+- 必要なモデルのプル
+- Stable Diffusion環境構築
+1. **コア機能の移行** (3-5日)
+- OpenAI API呼び出しをOllamaに置き換え
+- プロンプトの調整
+- Few-shot learningの実装
+1. **RAG機能の実装** (2-3日)
+- ChromaDBのセットアップ
+- ベクトル化と検索機能
+1. **画像生成パイプラインの構築** (3-5日)
+- SDXL/Fluxの設定
+- プロンプト変換ロジック
+1. **画像理解機能の追加** (2-3日)
+- LLaVAの統合
+- 参照画像からの特徴抽出
+
+### 2.4 ハードウェア要件
+
+- **最低要件:** NVIDIA RTX 3060 (12GB VRAM)
+- **推奨構成:** RTX 4070 Ti以上 (16GB VRAM)
+- **RAM:** 32GB以上
+- **ストレージ:** 100GB以上の空き容量
+
+### 2.5 メリット・デメリット
+
+#### メリット
+
+- 完全ローカル実行（プライバシー保護）
+- APIコスト0円
+- カスタマイズ性が高い
+
+#### デメリット
+
+- GPU必須
+- 生成速度がクラウドAPIより遅い
+- モデルの品質調整が必要
+
+## 3. GitHubプロジェクト管理方針の検討
+
+### 3.1 検討した選択肢
+
+#### 選択肢1: Fork
+
+- **却下理由:** 自分自身のリポジトリのためフォーク不可
+
+#### 選択肢2: ブランチで管理
+
+```bash
+git checkout -b feature/ollama-version
+```
+
+- 複数バリエーションを同一リポジトリで管理
+- 元のコードと簡単に比較可能
+
+#### 選択肢3: ディレクトリ構成で管理（採用候補）
+
+```
+100-times-ai-heroes/
+├── README.md
+├── versions/
+│   ├── openai/
+│   │   ├── 20240916-AI-Art-GP-3-Charactor-v1.0.py
+│   │   └── requirements.txt
+│   └── ollama/
+│       ├── character_generator.py
+│       ├── requirements.txt
+│       └── README.md
+└── docs/
+    └── ...
+```
+
+- **メリット:** 両バージョンがmainブランチで並存、ユーザーが選択可能
+- **推奨理由:** 最もわかりやすく、保守性が高い
+
+#### 選択肢4: タグ付きリリース管理
+
+```bash
+git tag -a v1.0-openai -m "OpenAI version"
+git tag -a v1.0-ollama -m "Ollama version"
+```
+
+### 3.2 推奨される管理方法
+
+**方法2（ディレクトリ構成で管理）を推奨**
+
+理由:
+
+- 両バージョンが同時に参照可能
+- ユーザーが環境に応じて選択できる
+- ドキュメントの整理がしやすい
+- 将来的に他のバリエーション（例: Anthropic Claude版）も追加しやすい
+
+## 4. 決定事項
+
+### 4.1 プロジェクト構造
+
+- **採用方針:** ディレクトリベースの管理
+- **構成:** versions/配下にopenai/とollama/を配置
+- **mainブランチで両バージョンを並存させる**
+
+### 4.2 README更新方針
+
+以下のセクションを追加:
+
+```markdown
+## Versions
+
+### OpenAI Version (Original)
+元のOpenAI APIを使用したバージョン
+- [セットアップ手順](docs/SETUP_OPENAI.md)
+
+### Ollama Version (Local LLM)
+Ollamaを使用したローカルLLM版
+- [セットアップ手順](docs/SETUP_OLLAMA.md)
+```
+
+## 5. 次のアクションアイテム
+
+1. **リポジトリの再構成**
+- [ ] versions/ディレクトリの作成
+- [ ] 既存コードの移動
+- [ ] README.mdの更新
+1. **Ollama版の開発**
+- [ ] 開発環境のセットアップ
+- [ ] 基本的なコード実装
+- [ ] テスト実行
+1. **ドキュメント整備**
+- [ ] SETUP_OLLAMA.mdの作成
+- [ ] 必要なモデル一覧の記載
+- [ ] トラブルシューティングガイド
+
+## 6. 補足資料
+
+### コードサンプル（提案）
+
+```python
+# ollama_character_generator.py の骨格
+
+import ollama
+from chromadb import Client
+from diffusers import StableDiffusionXLPipeline
+
+class OllamaCharacterGenerator:
+    def __init__(self):
+        self.text_model = 'llama3.1:8b'
+        self.vision_model = 'llava'
+        self.chroma_client = Client()
+        self.sd_pipe = StableDiffusionXLPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-base-1.0"
+        )
+    
+    def generate_character_prompt(self, seeds, wants, role):
+        """キャラクタープロンプト生成"""
+        response = ollama.chat(
+            model=self.text_model,
+            messages=[{
+                'role': 'user',
+                'content': f"""
+                Seeds: {seeds}
+                Wants: {wants}
+                Role: {role}
+                
+                上記の情報からキャラクター設定を作成してください。
+                """
+            }]
+        )
+        return response['message']['content']
+    
+    def analyze_reference_image(self, image_path):
+        """参照画像の分析"""
+        response = ollama.chat(
+            model=self.vision_model,
+            messages=[{
+                'role': 'user',
+                'content': '画像のポーズ、構図、スタイルを詳細に分析してください',
+                'images': [image_path]
+            }]
+        )
+        return response['message']['content']
+    
+    def generate_image(self, prompt):
+        """キャラクター画像生成"""
+        image = self.sd_pipe(prompt).images[0]
+        return image
+```
+
+## 7. 参考リンク
+
+- 元リポジトリ: https://github.com/masa-jp-art/100-times-ai-heroes
+- コンセプトページ: https://portfolio.foti.jp/100-times-ai-heroes
+- 解説ブログ: https://note.com/msfmnkns/n/naa7eaadc5054
+
+-----
+
+**議事録作成日:** 2026年2月18日  
+**次回レビュー予定:** 実装開始後
