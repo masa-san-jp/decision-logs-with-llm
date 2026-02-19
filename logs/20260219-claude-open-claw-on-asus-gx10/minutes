@@ -1,0 +1,142 @@
+# 議事録：OpenClaw × ASUS Ascent GX10 セキュリティセットアップ
+
+> **日時:** 2026年2月20日（金）  
+> **形式:** Claude（Opus 4.6）との対話セッション  
+> **目的:** ASUS Ascent GX10 上で OpenClaw を最も安全に稼働させる方法の調査・文書化
+
+-----
+
+## 1. セッション概要
+
+本セッションでは、ユーザーが所有する ASUS Ascent GX10 上で OpenClaw（オープンソース自律型 AI エージェント）を安全に運用するための手順を調査・整理し、最終的に包括的なセキュリティガイドドキュメント（.docx）を作成した。
+
+-----
+
+## 2. 議題と経緯
+
+### 2.1 第1ターン：基本的なセットアップ手順の質問
+
+**ユーザーの要求:**  
+「ASUS GX10 で OpenClaw を安全に稼働させる手順を教えて」
+
+**調査内容:**
+
+|調査対象           |検索クエリ              |主な情報源                                  |
+|---------------|-------------------|---------------------------------------|
+|OpenClaw とは何か  |`OpenClaw software`|openclaw.ai、Wikipedia、GitHub           |
+|ASUS GX10 のスペック|`ASUS GX10 specs`  |ASUS 公式、NVIDIA Marketplace、ServeTheHome|
+
+**確認された事実:**
+
+- **OpenClaw:** Peter Steinberger が開発したオープンソースの自律型 AI エージェント。メッセージングプラットフォーム経由で操作し、ファイル操作・シェルコマンド実行・ブラウザ自動化などが可能。2025年11月に Clawdbot として公開、2026年1月に Moltbot → OpenClaw へ改名。
+- **ASUS Ascent GX10:** NVIDIA GB10 Grace Blackwell Superchip 搭載のデスクトップ AI スーパーコンピュータ。ARM v9.2-A CPU、統合 Blackwell GPU、128 GB LPDDR5x 統合メモリ、Ubuntu Linux（DGX OS）搭載。価格 $2,999〜。
+- **セキュリティ上の懸念:** Wikipedia 記事で Cisco のセキュリティチームがサードパーティスキルのデータ窃取・プロンプトインジェクションを確認済み。OpenClaw メンテナー自身が「コマンドラインを理解できない人には危険すぎる」と警告。
+
+**提供した回答の構成:**
+
+1. セキュリティ上の注意（前提）
+1. GX10 環境準備（システム更新、Node.js）
+1. OpenClaw インストール（公式ワンライナー）
+1. 安全なオンボーディング設定（DM ポリシー、スキル、サンドボックス）
+1. ネットワークセキュリティ（UFW ファイアウォール）
+1. ヘルスチェック（`openclaw doctor`）
+1. 動作確認（Control UI）
+1. GX10 ならではの活用ポイント（Ollama でローカル LLM）
+
+**意思決定ポイント:**
+
+- DMポリシーは「pairing」を推奨（「open」は厳禁）
+- ファイルアクセスはサンドボックスモードから開始
+- ファイアウォールでポート 18789 を localhost のみに制限
+- サードパーティスキルの使用は控えめに
+
+-----
+
+### 2.2 第2ターン：包括的セキュリティガイドの作成
+
+**ユーザーの要求:**  
+「最も安全なセットアップガイド・リファレンスを書いて」
+
+**追加調査内容:**
+
+|調査対象             |検索クエリ                                                |主な情報源                                                                    |
+|-----------------|-----------------------------------------------------|-------------------------------------------------------------------------|
+|OpenClaw セキュリティ強化|`OpenClaw security hardening guide safe defaults`    |OpenClaw 公式ドキュメント、Hostinger、DigitalOcean、Auth0、Guardz、LumaDock、design.dev|
+|Docker サンドボックス設定 |`OpenClaw sandbox docker configuration exec approval`|OpenClaw Docker 公式ドキュメント、Simon Willison、DeepWiki、Macaron                 |
+
+**調査で判明した重要な知見:**
+
+- **42,665 件の露出インスタンス:** セキュリティ研究者 Maor Dayan が Shodan スキャンで発見。93.4% に認証バイパスあり。8件は完全にオープン（パスワードなし、フルシェルアクセス）。
+- **CVE-2026-25253:** WebSocket ハイジャック脆弱性。localhost バインドでも悪用可能（パッチ済み）。
+- **Cisco Talos:** 31,000 のエージェントスキルのうち 26% に脆弱性。
+- **Palo Alto Networks:** 「OpenClaw はエンタープライズ用途向けではない」との見解。
+- **DigitalOcean のアプローチ:** TLS（Caddy）、ペアリング認証、Docker サンドボックスによるエージェント隔離、Fail2ban。
+- **公式サンドボックス設定:** `mode: "all"`, `network: "none"`, `readOnlyRoot: true`, `capDrop: ["ALL"]` などの詳細設定。
+- **ツールポリシー:** default-deny で `allow` リストに必要最小限のツールのみ記載。
+
+**ドキュメント作成の意思決定:**
+
+- **形式:** Word ドキュメント（.docx）を選択 → プロフェッショナルなフォーマット（目次、表、コールアウトボックス付き）
+- **ツール:** Node.js の docx-js ライブラリを使用
+- **構成:** 全12章構成（脅威モデル → ホスト強化 → Docker → ゲートウェイ → チャンネル → スキル → 認証情報 → ローカル LLM → 監視 → クイックリファレンス → 判断フローチャート → 参考文献）
+
+**作成されたドキュメントの特徴:**
+
+- 表紙にハードウェア仕様表を掲載
+- 危険・警告・推奨のカラーコールアウトボックスで視認性を確保
+- コピペ可能な JSON 設定ブロックを全編に配置
+- 月次セキュリティ監査チェックリストを表形式で提供
+- 「そもそも OpenClaw が必要か？」の判断テーブルを含む
+
+**バリデーション結果:** 全検証パス（543 パラグラフ）
+
+-----
+
+## 3. 成果物一覧
+
+|#|ファイル名                              |形式      |内容                         |
+|-|-----------------------------------|--------|---------------------------|
+|1|`openclaw-gx10-security-guide.docx`|Word 文書 |全12章のセキュリティセットアップガイド＆リファレンス|
+|2|`meeting-minutes.md`               |Markdown|本議事録（意思決定プロセスの記録）          |
+
+-----
+
+## 4. 主要な意思決定のまとめ
+
+|決定事項      |選択                 |根拠                                              |
+|----------|-------------------|------------------------------------------------|
+|インストール方式  |Docker ベース         |コンテナ隔離によりホスト保護。DigitalOcean・セキュリティ研究者の推奨と一致     |
+|ゲートウェイバインド|loopback（127.0.0.1）|42,665 件の露出インスタンス事例。0.0.0.0 バインドは数分でスキャナーに検出される |
+|サンドボックスモード|`"all"`（全セッション）    |`"non-main"` では main セッションが無防備。全セッション隔離が最安全     |
+|ネットワーク    |`"none"`           |サンドボックス内からのデータ窃取を根本的に防止                         |
+|ツールポリシー   |default-deny       |Auth0 ガイド「何もしないならこれだけはやれ」の推奨。OWASP LLM06 準拠     |
+|DM ポリシー   |`"pairing"`        |全チャンネルで手動承認必須。「open」は最も多い設定ミス                   |
+|スキル管理     |ゼロスタート＋個別審査        |Cisco Talos の 26% 脆弱性発見に基づく                     |
+|LLM プロバイダー|Ollama（ローカル）推奨     |GX10 の 128GB メモリで 70B モデル実行可能。API キー不要・データ外部送信なし|
+|リモートアクセス  |Tailscale VPN      |ポート公開不要。暗号化オーバーレイネットワーク                         |
+|ドキュメント形式  |.docx（Word）        |表・コールアウト・目次など構造化された表現が可能。組織内共有に適する              |
+
+-----
+
+## 5. リスクと注意事項
+
+- **残存リスク:** プロンプトインジェクション、サプライチェーン攻撃、ゼロデイ脆弱性は本ガイドの設定でも完全には排除できない
+- **メンテナンス必須:** 月次監査（30〜60分）を継続しないと設定ドリフトが発生する
+- **OpenClaw の急速な開発:** プロジェクトは極めて活発に開発中であり、設定項目やベストプラクティスが変更される可能性がある
+- **GX10 の ARM アーキテクチャ:** 一部パッケージのビルドに時間がかかる場合がある（動作には問題なし）
+
+-----
+
+## 6. 参考リソース
+
+- OpenClaw 公式セキュリティドキュメント: https://docs.openclaw.ai/gateway/security
+- OpenClaw Docker ガイド: https://docs.openclaw.ai/install/docker
+- DigitalOcean セキュリティ強化 1-Click Deploy: https://www.digitalocean.com/blog/technical-dive-openclaw-hardened-1-click-app
+- Auth0 セキュリティ5ステップガイド: https://auth0.com/blog/five-step-guide-securing-moltbot-ai-agent
+- openclaw-secure-start: https://github.com/pottertech/openclaw-secure-start
+- Guardz MSP 向け強化ガイド: https://guardz.com/blog/openclaw-hardening-for-msps/
+- OWASP Top 10 for LLM Applications: https://owasp.org/www-project-top-10-for-large-language-model-applications
+
+-----
+
+*本議事録は 2026年2月20日の Claude セッションから自動生成されました。*
