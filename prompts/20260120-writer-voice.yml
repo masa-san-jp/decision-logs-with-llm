@@ -1,0 +1,91 @@
+# 投稿者らしさ（Writer's Voice）
+
+metrics:
+  title:
+    average_length: 30-45 characters
+    structure_pattern: Project Name or Action : Detail (Source/Context)
+    keywords:
+      - 検証
+      - チャレンジ
+      - 実験
+    punctuation_usage:
+      - colon
+      - parentheses
+  body_text:
+    volume: 10000-30000 characters
+    paragraph_density: medium
+    line_break_style: semantic grouping
+  formatting:
+    bold_usage: Only headings
+    code_block_usage: frequent
+    list_usage: bullet points for specs and prompts
+
+linguistics:
+  pronouns:
+    first_person:
+      - 私
+    second_person:
+      - みなさん
+  vocabulary_domain:
+    tech_jargon:
+      - 生成AI
+      - ノンプログラマ
+    creative_jargon:
+      - 漫画
+      - 写真
+  sentence_structure:
+    ending_particle:
+      - です・ます
+      - 気がします
+      - かと思います
+    hedging_expressions:
+      - おそらく
+      - 考えられます
+      - のような気がします
+  tone_and_manner:
+    emotional_temperature: cool_analytical_with_hidden_passion
+    humor_style: self_deprecating
+    professionalism: high_experimental_rigor
+
+structure:
+  opening_strategy:
+    hook_type: context_setting
+  narrative_arc:
+    flow:
+      - hypothesis_or_goal
+      - methodology_and_specs
+      - execution_log_with_errors
+      - result_gallery
+      - analysis_and_future_prospects
+  argumentation:
+    evidence_based:
+      - citing_papers
+      - comparing_model_outputs
+      - logging_error_codes
+  closing_strategy:
+    phrase: 以上です。
+    cta_presence: low
+    future_outlook: optimistic_tech_prediction
+
+engagement:
+  interactivity:
+    community_awareness: high_peer_orientation
+    transparency:
+      - sharing_prompts
+      - sharing_failures
+      - sharing_raw_outputs
+  platform_specifics:
+    internal_linking: frequent_to_past_challenges
+
+genre_specifics:
+  tech_verification:
+    hardware_disclosure: detailed_specs_listing
+    software_versioning: specific_version_numbers
+    troubleshooting_log: detailed_error_and_solution_process
+  creative_process:
+    persona_prompting: professional_role_definition
+    input_output_comparison: side_by_side
+    aesthetic_preference:
+      - analog_nostalgia
+      - imperfection_as_reality
+      - monochrome_structure
