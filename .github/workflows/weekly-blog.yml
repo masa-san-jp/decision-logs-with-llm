@@ -25,8 +25,8 @@ jobs:
           TARGET_FILES=()
 
           for item in logs/*; do
-            basename=$(basename "$item")
-            prefix=$(echo "$basename" | grep -oP '^\d{8}')
+            item_basename=$(basename "$item")
+            prefix=$(echo "$item_basename" | grep -oP '^\d{8}')
 
             if [[ -z "$prefix" || "$prefix" -lt "$START_DATE" || "$prefix" -gt "$END_DATE" ]]; then
               continue
