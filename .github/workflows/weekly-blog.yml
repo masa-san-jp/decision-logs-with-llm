@@ -96,9 +96,19 @@ jobs:
           タイトルも考えてください（キャッチーだけど煽りすぎないやつ）。
           出力はmarkdown形式で、先頭行をタイトル（# タイトル）にしてください。'
 
+          # NOTE: ログには秘密情報（APIキー・トークン・パスワード等）を含めないこと。
+          # 下記で代表的なパターンをベストエフォートでマスキングしてから外部APIに送信する。
+          REDACTED_LOGS="$(sed -E '
+            s/(api[_-]?key\s*[:=]\s*)[A-Za-z0-9._-]+/\1[REDACTED]/gi;
+            s/(token\s*[:=]\s*)[A-Za-z0-9._-]+/\1[REDACTED]/gi;
+            s/(password\s*[:=]\s*)[^[:space:]]+/\1[REDACTED]/gi;
+            s/(authorization\s*[:=]\s*Bearer\s+)[^[:space:]]+/\1[REDACTED]/gi;
+            s/[A-Za-z0-9+\/=_-]{32,}/[REDACTED]/g
+          ' /tmp/weekly_logs.txt)"
+
           USER_CONTENT="以下は今週（${START_DATE}〜${END_DATE}）のLLMとの議論ログです：
 
-          $(cat /tmp/weekly_logs.txt)"
+          ${REDACTED_LOGS}"
 
           RESPONSE=$(curl -s -w "\n%{http_code}" https://api.anthropic.com/v1/messages \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
