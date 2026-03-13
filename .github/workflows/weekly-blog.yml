@@ -14,7 +14,7 @@ on:
           - github_models
           - anthropic
       model:
-        description: "Model override (空欄=バックエンドのデフォルト: anthropic→claude-opus-4-6 / github_models→claude-sonnet-4-6)"
+        description: "Model override (空欄=バックエンドのデフォルト: anthropic→claude-opus-4-6 / github_models→claude-sonnet-4)"
         required: false
         default: ""
       blog_days:
@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: 対象ログファイルを収集
         id: collect
@@ -103,7 +105,7 @@ jobs:
         run: |
           BACKEND="${{ inputs.backend || 'github_models' }}"
           if [[ "$BACKEND" == "github_models" ]]; then
-            MODEL="${{ inputs.model || 'claude-sonnet-4-6' }}"
+            MODEL="${{ inputs.model || 'claude-sonnet-4' }}"
           else
             MODEL="${{ inputs.model || 'claude-opus-4-6' }}"
           fi
@@ -227,7 +229,7 @@ jobs:
         run: |
           BACKEND="${{ inputs.backend || 'github_models' }}"
           if [[ "$BACKEND" == "github_models" ]]; then
-            MODEL="${{ inputs.model || 'claude-sonnet-4-6' }}"
+            MODEL="${{ inputs.model || 'claude-sonnet-4' }}"
           else
             MODEL="${{ inputs.model || 'claude-opus-4-6' }}"
           fi
