@@ -2,17 +2,17 @@ name: Weekly Blog Generator
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # 毎週月曜 9:00 UTC（日本時間18:00）
+    - cron: '0 9 * * 5'  # 毎週金曜 9:00 UTC（日本時間18:00）
   workflow_dispatch:      # 手動実行も可能
     inputs:
       backend:
         description: "API backend"
         required: false
-        default: "anthropic"
+        default: "github_models"
         type: choice
         options:
-          - anthropic
           - github_models
+          - anthropic
       model:
         description: "Model override (空欄=バックエンドのデフォルト: anthropic→claude-opus-4-6 / github_models→claude-sonnet-4)"
         required: false
@@ -101,7 +101,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BACKEND="${{ inputs.backend || 'anthropic' }}"
+          BACKEND="${{ inputs.backend || 'github_models' }}"
           if [[ "$BACKEND" == "github_models" ]]; then
             MODEL="${{ inputs.model || 'claude-sonnet-4' }}"
           else
@@ -225,7 +225,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BACKEND="${{ inputs.backend || 'anthropic' }}"
+          BACKEND="${{ inputs.backend || 'github_models' }}"
           if [[ "$BACKEND" == "github_models" ]]; then
             MODEL="${{ inputs.model || 'claude-sonnet-4' }}"
           else
