@@ -14,73 +14,52 @@
 
 ## Weekly Blog Automation
 
-A GitHub Actions workflow (`weekly-blog.yml`) runs every Monday at 09:00 UTC and
-generates an engaging blog-style post from recent entries in `logs/`.
-Generated posts are saved under `blog/YYYY-MM-DD.md` and opened as a PR for review.
+A GitHub Actions workflow (`weekly-blog.yml`) runs every Friday at 09:00 UTC (18:00 JST) and
+generates blog-style posts in both Japanese and English from recent entries in `logs/`.
+Generated posts are committed directly to `blog/` as `YYYYMMDD-weekly.md` and `YYYYMMDD-weekly-en.md`.
 
 ### How it works
 
-1. The script (`scripts/generate_weekly_blog.py`) scans `logs/` for directories or
-   files whose names contain a `yyyymmdd` date token (e.g. `20260310-grant-agent`).
+1. The workflow scans `logs/` for directories or files whose names start with a `yyyymmdd` date token
+   (e.g. `20260310-grant-agent`).
 2. Files whose date falls within the past 7 days are collected.
-3. If no dated files are found the script falls back to a `git diff` against the
-   last processed commit (recorded in `.blog_state.json`).
-4. The previous blog post in `blog/` is read as context so the new post can
-   describe what changed since last time.
-5. A prompt is sent to the configured LLM backend, and the response is written to
-   `blog/YYYY-MM-DD.md`.
+3. If no dated files are found, the workflow exits gracefully without generating a post.
+4. Sensitive values (API keys, tokens, passwords) in the logs are automatically redacted before
+   being sent to the LLM.
+5. A persona-driven prompt is sent to the configured LLM backend, and two posts are generated:
+   a Japanese version and an English version.
+6. Both files are committed to the repository automatically.
 
-### Environment variables / workflow inputs
+### Workflow inputs
 
-| Variable | Default | Description |
+| Input | Default | Description |
 |---|---|---|
-| `BLOG_MODE` | `openai` | LLM backend: `openai` or `ollama` |
-| `BLOG_DAYS` | `7` | Days to look back |
-| `BLOG_DATE` | today UTC | Override output date (`YYYY-MM-DD`) |
-| `OPENAI_API_KEY` | — | Required for `openai` mode (store as GitHub Secret) |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Override OpenAI-compatible endpoint |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Model for OpenAI mode |
-| `OLLAMA_URL` | `http://localhost:11434` | Ollama endpoint |
-| `OLLAMA_MODEL` | `llama3` | Model for Ollama mode |
+| `backend` | `github_models` | LLM backend: `github_models` or `anthropic` |
+| `model` | — | Override model name (default: `claude-sonnet-4` / `claude-opus-4-6`) |
+| `blog_days` | `7` | Days to look back |
+| `blog_date` | today UTC | Override output date (`YYYY-MM-DD`) |
 
-### Running locally with Ollama
+### Secrets
 
-```bash
-# 1. Start Ollama (if not already running)
-ollama serve &
-
-# 2. Pull the model once
-ollama pull llama3
-
-# 3. Run the generator
-BLOG_MODE=ollama python scripts/generate_weekly_blog.py
-```
-
-The new post is written to `blog/YYYY-MM-DD.md`.
-
-### Running locally with an external API
-
-```bash
-export OPENAI_API_KEY=sk-...          # your key
-export OPENAI_MODEL=gpt-4o-mini       # or any compatible model
-
-python scripts/generate_weekly_blog.py
-```
-
-You can also point the script at any OpenAI-compatible API (e.g. Azure OpenAI,
-Together AI, Groq) by setting `OPENAI_BASE_URL`.
+| Secret | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | Required when `backend=anthropic` |
+| `GITHUB_TOKEN` | Provided automatically by Actions for `github_models` mode |
 
 ### Manual workflow dispatch
 
 Go to **Actions → Weekly Blog Generator → Run workflow** in the GitHub UI.
-You can override `blog_mode`, `blog_days`, and `blog_date` inputs before running.
+You can override `backend`, `model`, `blog_days`, and `blog_date` inputs before running.
 
 ### Scheduling
 
-The workflow is scheduled via cron (`0 9 * * 1` – every Monday 09:00 UTC).
+The workflow is scheduled via cron (`0 9 * * 5` – every Friday 09:00 UTC / 18:00 JST).
 To change the schedule, edit `.github/workflows/weekly-blog.yml`.
 
 ### Running tests
+
+> Note: The tests cover `scripts/generate_weekly_blog.py`, a standalone Python script
+> that is not used by the deployed workflow but may be useful for local experimentation.
 
 ```bash
 pip install pytest
